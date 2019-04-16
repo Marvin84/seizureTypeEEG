@@ -1,2 +1,3 @@
 # seizureTypeEEG
-Feature Engineering for Automatic Seizure Type Detection
+Feature Engineering for Automatic Seizure Type Detection (Work In Progress)
+One of the essential aspects of the diagnosis and treatment of the epilepsy by using electroencephalograms (EEGs) is the necessity of a case-specific analysis, which avoids a merely empirical approach based on trial and error in favor of a more systematic one. The detection of the specific type of the seizure in each epileptic patient can be helpful and can offer the possibility of receiving a personalized therapy. The majority of the machine learning algorithms for the seizure detection using EEG signal are exclusively designed to distinguish between the pre-ictal and the inter-ictal signal. This project aims to design a multi-class predictor for the classification of EEG signal
