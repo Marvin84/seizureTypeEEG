@@ -1,5 +1,5 @@
 import logging
-import nme
+import mne
 import numpy as np
 import pandas as pd
 from scipy import signal
