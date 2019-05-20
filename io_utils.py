@@ -1,10 +1,12 @@
-
 import logging
 import nme
 import numpy as np
-
 import pandas as pd
 from scipy import signal
+
+
+from functions import feature_frequency
+from functions import feature_time
 
 
 class DataWindower(object):
@@ -156,22 +158,19 @@ class Segment(object):
         self.electrodeNames = electrodes
         self.label= label
         self.fftSamples = fftSamples
+        self.fftExtractors = sorted([feat_func for feat_func in dir(feature_frequency) if not feat_func.startswith('_')])
+        self.timeExtractors = sorted([feat_func for feat_func in dir(feature_time) if not feat_func.startswith('_')])
 
-        self.set_windowed_samples()
-
-
-
-
-
-
-    def set_windowed_samples(self):
-
-        windower = DataWindower(overlap = 50, windowSizeSec = 2)
+        windower = DataWindower(overlap=50, windowSizeSec=2)
         self.windowedTimeSamples = windower.split(self.timeSamples, self.samplingFreq)
+        self.fftSamples = np.fft.rfft(self.windowedTimeSamples, axis=2)
 
 
 
-    def set
+
+
+
+
 
 
 
