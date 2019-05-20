@@ -1,38 +1,37 @@
 
-import numpy as np
+import logging
 import nme
+import numpy as np
+
+import pandas as pd
 from scipy import signal
 
 
-class DataSplitter(object):
-    """
-    """
-
-    @staticmethod
-# ______________________________________________________________________________________________________________________
-    def get_supported_windows():
-        return WINDOWS
+class DataWindower(object):
+    def __init__(self, overlap, windowSizeSec, window='boxcar'):
+        self.overlap = overlap / 100
+        self.window = window
+        self.windowSizeSec = windowSizeSec
 
 
-# ______________________________________________________________________________________________________________________
-    def windows_weighted(self, windows, window_size):
-        """ weights the splitted signal by the specified window function
+    def apply_window(self, windows, window_size):
+        """
         :param windows: the signals splitted into time windows
         :param window_size: the number of samples in the window
         :return: the windows weighted by the specified window function
         """
-        method_to_call = getattr(signal, self.window)
-        window = method_to_call(window_size)
+        windower = getattr(signal, self.window)
+        window = windower(window_size)
 
         return windows * window
 
-# ______________________________________________________________________________________________________________________
-    def split(self, signals, sampling_freq):
-        """ written by robin schirrmeister, adapted by lukas gemein
+
+    def split(self, samples, samplingFreq):
+        """
         :param rec: the recording object holding the signals and all information needed
         :return: the signals split into time windows of the specified size
         """
-        window_size = int(sampling_freq * self.window_size_sec)
+        window_size = int(samplingFreq * self.windowSizeSec)
         overlap_size = int(self.overlap * window_size)
         stride = window_size - overlap_size
 
@@ -41,16 +40,14 @@ class DataSplitter(object):
 
         # written by robin tibor schirrmeister
         signal_crops = []
-        for i_start in range(0, signals.shape[-1] - window_size + 1, stride):
-            signal_crops.append(np.take(signals, range(i_start, i_start + window_size), axis=-1, ))
+        for i_start in range(0, samples.shape[-1] - window_size + 1, stride):
+            signal_crops.append(np.take(samples, range(i_start, i_start + window_size), axis=-1, ))
 
-        return self.windows_weighted(np.array(signal_crops), window_size)
+
+        return self.apply_window(np.array(signal_crops), window_size)
 
 # ______________________________________________________________________________________________________________________
-    def __init__(self, overlap=50, window='boxcar', window_size_sec=2):
-        self.overlap = overlap/100
-        self.window = window
-        self.window_size_sec = window_size_sec
+
 
 
 
@@ -64,22 +61,27 @@ class EdfFile(object):
 
     """
 
-    def __init__(self, filename):
+    def __init__(self, filename, wantedElectrodes):
 
         self.filename = filename
+        self.electrodeNames = []
         self.labelInfoList = []
 
+
+
         self.read_edf_file()
+        self.set_edf_channels(wantedElectrodes)
+
 
 
 
         """
-        self.signals = signals
+
         self.signal_ft = signals_ft
         self.signals_complete = signals_complete
         """
 
-    def getLabelAndTimeCuts(self):
+    def get_label_and_time_cuts(self):
         returnList = []
         with open(self.filename + ".tse") as file:
             for line in file:
@@ -88,7 +90,7 @@ class EdfFile(object):
         return returnList
 
 
-    def read_edf_file(self):
+    def read_edf_file(self, labels):
 
         self.edfPath = self.filename + ".edf"
         try:
@@ -103,53 +105,82 @@ class EdfFile(object):
         else: self.samplingFreq = sampling_frequency
 
         self.nSamples       = self.rawEdf.n_times
-        self.electrodeNames = self.rawEdf.ch_names
+        self.allElectrodes = self.rawEdf.ch_names
         self.duration = self.nSamples / max(self.samplingFreq, 1)
 
-        labelList = self.getLabelAndTimeCuts()
+        labelList = self.get_label_and_time_cuts()
         for ele in labelList:
             ele[2] = labelList[ele[2]]
             self.labelInfoList.append(ele)
 
-    def filterChannels(rec_channels, wanted_elecs):
 
-        selected_ch_names = []
-        for wanted_part in wanted_elecs:
-            wanted_found_name = []
-            for ch_name in rec_channels:
-                if ' ' + wanted_part + '-' in ch_name:
-                    wanted_found_name.append(ch_name)
-            assert len(wanted_found_name) == 1
-            selected_ch_names.append(wanted_found_name[0])
-        return selected_ch_names
+
+
+
+    def set_edf_channels(self, wantedElectrods):
+        for electrode in wantedElectrods:
+            for edfElectrode in self.allElectrodes:
+                if ' ' + electrode + '-' in edfElectrode:
+                    self.electrodeNames.append(edfElectrode)
 
 
 
 
 
 
+    def load_data_samples_for_electrodes(self):
+
+        self.rawEdf.load_data()
+        samples = self.rawEdf.get_data()
+
+        data = pd.DataFrame(index=range(self.nSamples), columns=self.electrodeNames)
+        for electrode in self.electrodeNames:
+            data[electrode] = samples[list(self.allElectrodes).index(electrode)]
+
+        self.timeSamples = data.values.T
 
 
 
-
-
-    def init_processing_units(self):
-        self.splitter = DataSplitter(overlap = 50, window_size_sec=2)
-        # self.feature_generator = feature_generator.FeatureGenerator(domain=cmd_args.domain, bands=cmd_args.bands,
-        #                                                            window_size_sec=2,
-        #                                                            overlap=50,
-        #                                                           electrodes=wanted_elecs)
 
 
 class Segment(object):
 
-    def __init__(self, sampling_freq, n_samples, signal_names, duration, label,
-                 signals, signals_ft=None):
+    def __init__(self, samplingFreq, nSamples, duration, timeSamples,
+                 electrodes, label, fftSamples=None):
 
-        self.sampling_freq = sampling_freq
-        self.n_samples = n_samples
-        self.signal_names = signal_names
+        self.samplingFreq = samplingFreq
+        self.nSamples = nSamples
         self.duration = duration
-        self.signals = signals
-        self. label= label
-        self.signals_ft = signals_ft
+        self.timeSamples = timeSamples
+        self.windowedTimeSamples = []
+        self.electrodeNames = electrodes
+        self.label= label
+        self.fftSamples = fftSamples
+
+        self.set_windowed_samples()
+
+
+
+
+
+
+    def set_windowed_samples(self):
+
+        windower = DataWindower(overlap = 50, windowSizeSec = 2)
+        self.windowedTimeSamples = windower.split(self.timeSamples, self.samplingFreq)
+
+
+
+    def set
+
+
+
+
+
+
+
+
+
+
+
+
