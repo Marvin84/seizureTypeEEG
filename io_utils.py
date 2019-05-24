@@ -1,6 +1,7 @@
 import logging
-import mne
 import pandas as pd
+import mne
+
 
 
 
