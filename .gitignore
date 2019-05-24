@@ -2,4 +2,5 @@
 tuh-eeg-auto-diagnosis/
 v1.4.0/
 .ipynb_checkpoints/
-hdf*
+hdf*/
+__pycache__/
