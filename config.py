@@ -1,6 +1,7 @@
 #Paths
 config_datasetPart = 1
-config_prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
+
+prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
 config_rootdir = {1: prePath+"v1.4.0_1/edf/train/02_tcp_le/", 2: prePath+"v1.4.0_2/edf/train/03_tcp_ar_a/"}
 
 
@@ -12,7 +13,7 @@ config_electrodes = ['A1', 'A2',
                        'P3', 'P4', 'PZ',
                        'T3', 'T4', 'T5', 'T6']
 
-config_labels = {'bckg': 1 ,'fnsz': 2,'gnsz': 3,'spsz': 4,'cpsz': 5,'absz':6,'tnsz': 7,'tcsz': 8,'mysz': 9}
+config_classes = {'bckg': 1 ,'fnsz': 2,'gnsz': 3,'spsz': 4,'cpsz': 5,'absz':6,'tnsz': 7,'tcsz': 8,'mysz': 9}
 
 #for the notch filter and other functions
 config_windows = [

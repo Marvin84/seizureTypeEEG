@@ -3,103 +3,69 @@ import pandas as pd
 import mne
 
 
+from data_structures import *
 
 
-class EdfFile(object):
+
+
+def get_all_edf_files(filenames, wantedElectrodes, classes):
+    """
+
+    :param filenames: the names of the files without the extension
+    :param wantedElectrodes: the electrodes that are to be included for the feature extraction
+    :param classes: the seizure classes
+    :return: the list of all edfFile objects
+    """
+    edfFiles = []
+    for index, fName in enumerate(filenames.keys()):
+        print("working on the recording ", str(index) + "/" + str(len(filenames.keys())))
+        edf = EdfFile(filenames[fName], wantedElectrodes, classes)
+        if len(edf.timeSamples):
+            edfFiles.append(edf)
+        if index >2: break
+    return edfFiles
+
+
+def get_segments_from_edf(edfFile):
+    """
+    this function divides a recording into its labeld segments
+    :param edfFile: an edfFile object
+    :return: a list of objects Segment
+    """
+
+    segments = []
+    sampFreq = edfFile.samplingFreq
+    electrodes = edfFile.electrodeNames
+    for l in edfFile.labelInfoList:
+        startTime = float(l[0])
+        endTime = float(l[1])
+        startIndex = int(startTime * sampFreq)
+        endIndex = int(endTime * sampFreq)
+        label = int(l[2])
+        duration = round(endTime - startTime , 4)
+        nSamples = duration * sampFreq
+        samples = edfFile.timeSamples[:, startIndex:endIndex]
+        s = Segment(sampFreq, nSamples, duration, samples, electrodes, label)
+        segments.append(s)
+    return segments
+
+
+
+def get_all_segments(edfFiles):
 
     """
-    This is a container class for reading an edf file and storing the relevant information of an EEG recording
-
+    This function iterate over all edfFiles and calls another function
+    which gets the segments from the edfFuke object
+    :param edfFiles: the list of edfFile objects
+    :return: all segments as Segment objects in a list
     """
 
-    def __init__(self, filename, wantedElectrodes):
-
-        self.filename = filename
-        self.electrodeNames = []
-        self.labelInfoList = []
-
-
-
-        self.read_edf_file()
-        self.set_edf_channels(wantedElectrodes)
-
-
-
-
-        """
-
-        self.signal_ft = signals_ft
-        self.signals_complete = signals_complete
-        """
-
-    def get_label_and_time_cuts(self):
-        returnList = []
-        with open(self.filename + ".tse") as file:
-            for line in file:
-                if len(line.split()) == 4:
-                    returnList.append(line.split()[:-1])
-        return returnList
-
-
-    def read_edf_file(self, labels):
-
-        self.edfPath = self.filename + ".edf"
-        try:
-            self.rawEdf = mne.io.read_raw_edf(self.filename + ".edf", verbose='error')
-
-        except ValueError:
-            return
-
-        sampling_frequency = int(self.rawEdf.info['sfreq'])
-        if sampling_frequency < 10:
-            return
-        else: self.samplingFreq = sampling_frequency
-
-        self.nSamples       = self.rawEdf.n_times
-        self.allElectrodes = self.rawEdf.ch_names
-        self.duration = self.nSamples / max(self.samplingFreq, 1)
-
-        labelList = self.get_label_and_time_cuts()
-        for ele in labelList:
-            ele[2] = labelList[ele[2]]
-            self.labelInfoList.append(ele)
-
-
-
-
-
-    def set_edf_channels(self, wantedElectrods):
-        for electrode in wantedElectrods:
-            for edfElectrode in self.allElectrodes:
-                if ' ' + electrode + '-' in edfElectrode:
-                    self.electrodeNames.append(edfElectrode)
-
-
-
-
-
-
-    def load_data_samples_for_electrodes(self):
-
-        self.rawEdf.load_data()
-        samples = self.rawEdf.get_data()
-
-        data = pd.DataFrame(index=range(self.nSamples), columns=self.electrodeNames)
-        for electrode in self.electrodeNames:
-            data[electrode] = samples[list(self.allElectrodes).index(electrode)]
-
-        self.timeSamples = data.values.T
-
-
-
-
-
-
-
-
-
-
-
+    segments = []
+    for edf in edfFiles:
+        print("getting the labeled segments from the recording ", str(edf.filename))
+        segments = segments + get_segments_from_edf(edf)
+        if edfFiles.index(edf) > 2: break
+    return segments
 
 
 
