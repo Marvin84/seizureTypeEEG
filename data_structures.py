@@ -3,9 +3,11 @@ import numpy as np
 import pandas as pd
 import mne
 from scipy import signal
+import csv
 
 from functions import feature_frequency
 from functions import feature_time
+from config import *
 
 
 class EdfFile(object):
@@ -57,7 +59,8 @@ class EdfFile(object):
 
         labelList = self.get_label_and_time_cuts()
         for ele in labelList:
-            ele[2] = classes[ele[2]]
+            #ele[2] = classes[ele[2]]
+            #ToDo: decides which label you wanna include
             self.labelInfoList.append(ele)
 
     def set_edf_channels(self, wantedElectrods):
@@ -127,6 +130,7 @@ class DataWindower(object):
         if stride == 0:
             logging.error("Time windows cannot have an overlap of 100%.")
 
+
         # written by robin tibor schirrmeister
         signal_crops = []
         for i_start in range(0, samples.shape[-1] - window_size + 1, stride):
@@ -150,6 +154,11 @@ class FeatureExtractor(object):
         self.timeExtractors = timeExtractors
         self.electrodes = electrodes
         self.bands = bands
+        self.featureLabels = ['_'.join(['fft', l]) for l in fftExtractors] \
+                             + ['_'.join(['time', l]) for l in timeExtractors] + ["label"]
+
+        self.features = dict(zip(self.featureLabels, [[] for _ in range(len(self.featureLabels))]))
+
 
 
 
@@ -190,18 +199,22 @@ class FeatureExtractor(object):
 
 
     def get_freq_feature_labels(self):
+        l = []
         for fExt in self.fftExtractors:
             for band_id, band in enumerate(self.bands[:-1]):
                 for electrode in self.electrodes:
                     label = '_'.join(['fft', fExt, str(band) + '-' + str(self.bands[band_id + 1]) + 'Hz',
                                       str(electrode)])
-                    self.featureLabels.append(label)
+                    l.append(label)
+        return l
 
     def get_time_feature_labels(self):
+        l = []
         for tExt in self.timeExtractors:
             for electrode in self.electrodes:
                 label = '_'.join(['time', tExt, str(electrode)])
-                self.featureLabels.append(label)
+                l.append(label)
+        return l
 
     def rolling_to_windows(self, features):
         """ This should be used to transform the results of the rolling operation of pandas to window values.
@@ -212,22 +225,52 @@ class FeatureExtractor(object):
         return features[self.windowSize - 1::self.windowSize - self.overlapSize]
 
     def extract_features_in_freq(self, segment):
-        print("extractinf features in freq for segment with label", segment.label)
-        featuresDict = {}
+
+
         for freqFeatureName in self.fftExtractors:
-            features = self.compute_mean_freq_features(freqFeatureName, segment)
             label =  '_'.join(['fft', freqFeatureName])
-            featuresDict[label] = features
-        return featuresDict
+            self.features[label].append(self.compute_mean_freq_features(freqFeatureName, segment))
+
 
     def extract_features_in_time(self, segment):
-        featuresDict = {}
+
         for timeFeatureName in self.timeExtractors:
             func = getattr(feature_time, timeFeatureName)
             allFeatures = func(pd.DataFrame(segment.timeSamples.T), self.windowSize)
             featSlidingWindows = self.rolling_to_windows(allFeatures)
             meanValues = np.mean(featSlidingWindows, axis=0)
             label = '_'.join(['time', timeFeatureName])
-            featuresDict[label] = meanValues.values
+            self.features[label].append(meanValues.values)
 
-        return featuresDict
+
+    def extract_features_from_segment(self, segment):
+        self.extract_features_in_freq(segment)
+        self.extract_features_in_time(segment)
+        self.features["label"].append([segment.label])
+
+
+    def extract_features_from_segments(self, listOfSegments):
+        print("here")
+        for s in listOfSegments:
+            print("extracting from segment", listOfSegments.index(s))
+            self.extract_features_from_segment(s)
+
+
+    def write_features_to_csv(self, filename):
+        n = len(self.features[self.featureLabels[0]])
+        features = []
+        l = []
+        l.extend(self.get_freq_feature_labels())
+        l.extend(self.get_time_feature_labels())
+        l.append("label")
+        features.append(l)
+        for i in range(n):
+            f = []
+            for feat in self.featureLabels:
+                f.extend(self.features[feat][i])
+            features.append(f)
+
+
+        with open('.'.join([filename, "csv"]), 'w') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(features)

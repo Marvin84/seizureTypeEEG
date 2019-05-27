@@ -22,11 +22,11 @@ def get_all_edf_files(filenames, wantedElectrodes, classes):
         edf = EdfFile(filenames[fName], wantedElectrodes, classes)
         if len(edf.timeSamples):
             edfFiles.append(edf)
-        if index >2: break
+        if index == 100: break
     return edfFiles
 
 
-def get_segments_from_edf(edfFile):
+def get_segments_from_edf(edfFile, minLength=500):
     """
     this function divides a recording into its labeld segments
     :param edfFile: an edfFile object
@@ -41,12 +41,16 @@ def get_segments_from_edf(edfFile):
         endTime = float(l[1])
         startIndex = int(startTime * sampFreq)
         endIndex = int(endTime * sampFreq)
-        label = int(l[2])
+        #label = int(l[2])
+        label = l[2]
         duration = round(endTime - startTime , 4)
         nSamples = duration * sampFreq
         samples = edfFile.timeSamples[:, startIndex:endIndex]
-        s = Segment(sampFreq, nSamples, duration, samples, electrodes, label)
-        segments.append(s)
+        if nSamples > minLength:
+            s = Segment(sampFreq, nSamples, duration, samples, electrodes, label)
+            segments.append(s)
+
+
     return segments
 
 
@@ -63,8 +67,8 @@ def get_all_segments(edfFiles):
     segments = []
     for edf in edfFiles:
         print("getting the labeled segments from the recording ", str(edf.filename))
-        segments = segments + get_segments_from_edf(edf)
-        if edfFiles.index(edf) > 2: break
+        segments.extend(get_segments_from_edf(edf))
+        if edfFiles.index(edf) == 100: break
     return segments
 
 
