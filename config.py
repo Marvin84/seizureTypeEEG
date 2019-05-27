@@ -1,7 +1,8 @@
 #Paths
 config_datasetPart = 1
 
-prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
+#prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
+prePath = "/Users/laneskij/workspaces/seizureTypeEEG/"
 config_rootdir = {1: prePath+"v1.4.0_1/edf/train/02_tcp_le/", 2: prePath+"v1.4.0_2/edf/train/03_tcp_ar_a/"}
 
 
