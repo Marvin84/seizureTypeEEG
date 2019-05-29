@@ -14,7 +14,8 @@ config_electrodes = ['A1', 'A2',
                        'P3', 'P4', 'PZ',
                        'T3', 'T4', 'T5', 'T6']
 
-config_classes = {'bckg': 1 ,'fnsz': 2,'gnsz': 3,'spsz': 4,'cpsz': 5,'absz':6,'tnsz': 7,'tcsz': 8,'mysz': 9}
+#config_classes = {'bckg': 1 ,'fnsz': 2,'gnsz': 3,'spsz': 4,'cpsz': 5,'absz':6,'tnsz': 7,'tcsz': 8,'mysz': 9}
+config_classes = ['fnsz','gnsz','spsz','cpsz','absz','tnsz','tcsz','mysz']
 
 
 #for the notch filter and other functions

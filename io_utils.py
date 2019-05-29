@@ -4,6 +4,8 @@ import mne
 
 
 from data_structures import *
+from preprocessing import *
+from config import *
 
 
 
@@ -22,7 +24,7 @@ def get_all_edf_files(filenames, wantedElectrodes, classes):
         edf = EdfFile(filenames[fName], wantedElectrodes, classes)
         if len(edf.timeSamples):
             edfFiles.append(edf)
-        if index == 100: break
+        if index == 5: break
     return edfFiles
 
 
@@ -37,18 +39,19 @@ def get_segments_from_edf(edfFile, minLength=500):
     sampFreq = edfFile.samplingFreq
     electrodes = edfFile.electrodeNames
     for l in edfFile.labelInfoList:
-        startTime = float(l[0])
-        endTime = float(l[1])
-        startIndex = int(startTime * sampFreq)
-        endIndex = int(endTime * sampFreq)
-        #label = int(l[2])
-        label = l[2]
-        duration = round(endTime - startTime , 4)
-        nSamples = duration * sampFreq
-        samples = edfFile.timeSamples[:, startIndex:endIndex]
-        if nSamples > minLength:
-            s = Segment(sampFreq, nSamples, duration, samples, electrodes, label)
-            segments.append(s)
+        if l[2] in config_classes:
+            startTime = float(l[0])
+            endTime = float(l[1])
+            startIndex = int(startTime * sampFreq)
+            endIndex = int(endTime * sampFreq)
+            #label = int(l[2])
+            label = l[2]
+            duration = round(endTime - startTime , 4)
+            nSamples = duration * sampFreq
+            samples = edfFile.timeSamples[:, startIndex:endIndex]
+            if nSamples > minLength:
+                s = Segment(sampFreq, nSamples, duration, samples, electrodes, label)
+                segments.append(s)
 
 
     return segments
@@ -68,9 +71,22 @@ def get_all_segments(edfFiles):
     for edf in edfFiles:
         print("getting the labeled segments from the recording ", str(edf.filename))
         segments.extend(get_segments_from_edf(edf))
-        if edfFiles.index(edf) == 100: break
+        #if edfFiles.index(edf) == 100: break
     return segments
 
+
+def clean_segments(listOfSegments):
+
+    cleanedSegments = []
+    preprocessor = Preprocessor(config_startShift,
+                           config_endShift,
+                           config_powerLineFreq,
+                           config_bandLowCut,
+                           config_bandHighCut)
+    for s in listOfSegments:
+        cleanedSegments.append(preprocessor.clean(s))
+
+    return cleanedSegments
 
 
 

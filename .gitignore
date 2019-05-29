@@ -5,3 +5,5 @@ v1.4.0/
 .ipynb_checkpoints/
 hdf*/
 __pycache__/
+datasets/
+data/
