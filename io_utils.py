@@ -24,7 +24,7 @@ def get_all_edf_files(filenames, wantedElectrodes, classes):
         edf = EdfFile(filenames[fName], wantedElectrodes, classes)
         if len(edf.timeSamples):
             edfFiles.append(edf)
-        if index == 5: break
+        #if index == 5: break
     return edfFiles
 
 

@@ -142,9 +142,9 @@ class DataWindower(object):
 
 class FeatureExtractor(object):
 
-    def __init__(self, windowSize, overlap, fftExtractors, timeExtractors, electrodes, bands):
+    def __init__(self, windowSizeSec, windowSize, overlap, fftExtractors, timeExtractors, electrodes, bands):
 
-        self.windowSizeSec = 2
+        self.windowSizeSec = windowSizeSec
         self.windowSize = windowSize
         self.windowOverlap = overlap #already divided by 100
         self.bandOverlap = 0.5 # add the suggested band overlap of 50%
