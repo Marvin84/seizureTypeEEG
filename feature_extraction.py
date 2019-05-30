@@ -4,7 +4,7 @@ import scipy
 
 
 
-import pyeeg
+#import pyeeg
 from config import *
 
 

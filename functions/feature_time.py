@@ -43,14 +43,14 @@ def min(df, window_size):
 def max(df, window_size):
     return df.rolling(window=window_size).max()
 
-
+"""
 def skew(df, window_size):
     return df.rolling(window=window_size).skew()
 
 
 def kurt(df, window_size):
     return df.rolling(window=window_size).kurt()
-
+"""
 
 def energy(df, window_size):
     return (df * df).rolling(window=window_size).mean()

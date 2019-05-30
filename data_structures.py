@@ -84,7 +84,7 @@ class EdfFile(object):
 class Segment(object):
 
     def __init__(self, samplingFreq, nSamples, duration, timeSamples,
-                 electrodes, label, fftSamples=None, windowType='boxcar'):
+                 electrodes, label, preprocessor, fftSamples=None, windowType='boxcar'):
         self.samplingFreq = samplingFreq
         self.nSamples = nSamples
         self.duration = duration
@@ -94,10 +94,17 @@ class Segment(object):
         self.label = label
         self.fftSamples = fftSamples
 
-
-        windower = DataWindower(windowType, windowSizeSec=2, overlap=50)
+        self.clean_timeSamples(preprocessor)
+        windower = DataWindower(windowType, windowSizeSec=config_windowSizeSec, overlap=config_overlap*100)
         self.windowedTimeSamples = windower.split(self.timeSamples, self.samplingFreq)
         self.fftSamples = np.fft.rfft(self.windowedTimeSamples, axis=2)
+
+    def clean_timeSamples(self, preprocessor):
+        if preprocessor != None:
+            preprocessor.clean(self)
+
+
+
 
 
 class DataWindower(object):
@@ -222,6 +229,7 @@ class FeatureExtractor(object):
         :param features: feature computation achieved through pandas.rolling()
         :return: rolling feature sliced at the window locations
         """
+        f = features[self.windowSize - 1::self.windowSize - self.overlapSize]
         return features[self.windowSize - 1::self.windowSize - self.overlapSize]
 
     def extract_features_in_freq(self, segment):
@@ -238,6 +246,7 @@ class FeatureExtractor(object):
             func = getattr(feature_time, timeFeatureName)
             allFeatures = func(pd.DataFrame(segment.timeSamples.T), self.windowSize)
             featSlidingWindows = self.rolling_to_windows(allFeatures)
+            f = featSlidingWindows.values
             meanValues = np.mean(featSlidingWindows, axis=0)
             label = '_'.join(['time', timeFeatureName])
             self.features[label].append(meanValues.values)

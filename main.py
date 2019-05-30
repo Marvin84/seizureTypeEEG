@@ -16,7 +16,7 @@ def main(args):
     print("Starting with edf files...")
     edfFiles = get_all_edf_files(args["filenames"], config_electrodes, config_classes)
     segments = get_all_segments(edfFiles)
-    cleanedSegments = clean_segments(segments)
+
 
     fftExtractors  = sorted([feat_func for feat_func in dir(feature_frequency) if not feat_func.startswith('_')])
     timeExtractors = sorted([feat_func for feat_func in dir(feature_time) if not feat_func.startswith('_')])
@@ -28,8 +28,12 @@ def main(args):
                                         timeExtractors,
                                         config_electrodes,
                                         config_bands)
-    featureExtractor.extract_features_from_segments(cleanedSegments)
-    featureExtractor.write_features_to_csv("train2_F24_O75_W1")
+    featureExtractor.extract_features_from_segments(segments)
+    name = "_".join([config_rootdir[config_datasetPart].split("edf")[0][-7:-2],
+                    "B",str(config_bands[-1]),
+                    "O", str(config_overlap),
+                     "W", str(config_windowSizeSec)])
+    featureExtractor.write_features_to_csv(name)
 
 
 

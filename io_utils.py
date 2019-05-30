@@ -21,14 +21,15 @@ def get_all_edf_files(filenames, wantedElectrodes, classes):
     edfFiles = []
     for index, fName in enumerate(filenames.keys()):
         print("working on the recording ", str(index) + "/" + str(len(filenames.keys())))
-        edf = EdfFile(filenames[fName], wantedElectrodes, classes)
-        if len(edf.timeSamples):
-            edfFiles.append(edf)
-        #if index == 5: break
+        if(check_if_seizure(filenames[fName])):
+            edf = EdfFile(filenames[fName], wantedElectrodes, classes)
+            if len(edf.timeSamples):
+                edfFiles.append(edf)
+        #if index == 10: break
     return edfFiles
 
 
-def get_segments_from_edf(edfFile, minLength=500):
+def get_segments_from_edf(edfFile, preprocessor=None):
     """
     this function divides a recording into its labeld segments
     :param edfFile: an edfFile object
@@ -36,8 +37,14 @@ def get_segments_from_edf(edfFile, minLength=500):
     """
 
     segments = []
+    minLength = ()
     sampFreq = edfFile.samplingFreq
     electrodes = edfFile.electrodeNames
+
+    windowS = config_samplFreq*config_windowSizeSec
+    minLength = windowS + ((config_endShift+config_startShift)*config_samplFreq*2)
+
+
     for l in edfFile.labelInfoList:
         if l[2] in config_classes:
             startTime = float(l[0])
@@ -50,7 +57,7 @@ def get_segments_from_edf(edfFile, minLength=500):
             nSamples = duration * sampFreq
             samples = edfFile.timeSamples[:, startIndex:endIndex]
             if nSamples > minLength:
-                s = Segment(sampFreq, nSamples, duration, samples, electrodes, label)
+                s = Segment(sampFreq, nSamples, duration, samples, electrodes, label, preprocessor)
                 segments.append(s)
 
 
@@ -68,25 +75,28 @@ def get_all_segments(edfFiles):
     """
 
     segments = []
+    preprocessor = Preprocessor(config_startShift,
+                                config_endShift,
+                                config_powerLineFreq,
+                                config_bandLowCut,
+                                config_bandHighCut)
     for edf in edfFiles:
         print("getting the labeled segments from the recording ", str(edf.filename))
-        segments.extend(get_segments_from_edf(edf))
-        #if edfFiles.index(edf) == 100: break
+        segments.extend(get_segments_from_edf(edf, preprocessor))
+        #if edfFiles.index(edf) == 10: break
     return segments
 
 
-def clean_segments(listOfSegments):
 
-    cleanedSegments = []
-    preprocessor = Preprocessor(config_startShift,
-                           config_endShift,
-                           config_powerLineFreq,
-                           config_bandLowCut,
-                           config_bandHighCut)
-    for s in listOfSegments:
-        cleanedSegments.append(preprocessor.clean(s))
 
-    return cleanedSegments
+def check_if_seizure(filename):
+    with open(filename + ".tse") as file:
+        for line in file:
+            if len(line.split()) == 4:
+                labelInfo = line.split()[:-1]
+                if labelInfo[2] != "bckg":
+                    return True
+        return False
 
 
 

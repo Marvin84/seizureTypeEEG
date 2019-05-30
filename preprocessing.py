@@ -15,50 +15,52 @@ class Preprocessor(object):
 
 
 
-    def crop_start_end(self, segment):
+
+    def crop_start_end(self):
         # elimination of some artifacts
-        newStart = int(self.cropStartTime * segment.duration)
-        newEnd = int(self.cropEndTime * segment.duration)
-        segment.timeSamples = segment.timeSamples[:, newStart * segment.samplingFreq: -newEnd * segment.samplingFreq]
-        segment.duration = segment.duration - (newStart + newEnd)
-        return segment
+        newStart = self.cropStartTime * self.segment.duration
+        newEnd = self.cropEndTime * self.segment.duration
+        self.segment.timeSamples = self.segment.timeSamples[:, int(newStart * self.segment.samplingFreq):
+        -int(newEnd * self.segment.samplingFreq)]
+        self.segment.duration = self.segment.duration - (newStart + newEnd)
 
 
 
-    def apply_bandpass_frequency_domain(self, segment):
-        # Remove the power line frequency from the segment
-        segment.timeSamples = mne.filter.notch_filter(segment.timeSamples,
-                                                       segment.samplingFreq,
+
+    def apply_bandpass_frequency_domain(self):
+        # Remove the power line frequency from the self.segment
+        self.segment.timeSamples = mne.filter.notch_filter(self.segment.timeSamples,
+                                                       self.segment.samplingFreq,
                                                        np.arange(self.frequencyBandpass,
-                                                                 segment.samplingFreq / 2,
+                                                                 self.segment.samplingFreq / 2,
                                                                  self.frequencyBandpass),
                                                        verbose='error')
-        return segment
 
 
-    def apply_bandpass_time_domain(self, segment):
+
+    def apply_bandpass_time_domain(self):
         #filter the signal in the band defines by low and high values
-        segment.timeSamples = mne.filter.filter_data(segment.timeSamples,
-                                                      segment.samplingFreq,
+        self.segment.timeSamples = mne.filter.filter_data(self.segment.timeSamples,
+                                                      self.segment.samplingFreq,
                                                       self.timeBandPassLow,
                                                       self.timeBandPassHigh,
                                                       verbose='error')
-        return segment
 
 
-    def volts_to_microvolts(self, segment):
-        segment.timeSamples *= 1000000
-        return segment
+
+    def volts_to_microvolts(self):
+        self.segment.timeSamples *= 1000000
+
 
 
 
     def clean(self, segment):
-
-        croppedSeg = self.crop_start_end(segment)
-        bandFrequSeg = self.apply_bandpass_frequency_domain(croppedSeg)
-        bandTimeSeg = self.apply_bandpass_time_domain(bandFrequSeg)
-        cleanedSegment = self.volts_to_microvolts(bandTimeSeg)
-        return cleanedSegment
+        self.segment = segment
+        self.crop_start_end()
+        self.apply_bandpass_frequency_domain()
+        self.apply_bandpass_time_domain()
+        self.volts_to_microvolts()
+        return self.segment
 
 
 

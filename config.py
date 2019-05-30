@@ -1,13 +1,14 @@
 #Paths
 config_datasetPart = 2
 
-prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
-#prePath = "/Users/laneskij/workspaces/seizureTypeEEG/"
-config_rootdir = {1: prePath+"v1.4.0_1/edf/train/01_tcp_ar/",
-                  2: prePath+"v1.4.0_2/edf/train/02_tcp_le/",
-                  3: prePath+"v1.4.0_3/edf/train/03_tcp_ar_a/",
-                  4: prePath+"dev_2/edf/dev_test/02_tcp_le/",
-                  5: prePath+"dev_3/edf/dev_test/03_tcp_ar_a/",}
+#prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
+prePath = "/Users/laneskij/workspaces/seizureTypeEEG/"
+config_rootdir = {1: prePath+"train_0/edf/train/01_tcp_ar/",
+                  2: prePath+"train_1/edf/train/02_tcp_le/",
+                  3: prePath+"train_2/edf/train/03_tcp_ar_a/",
+                  4: prePath+"test_0/edf/dev_test/01_tcp_ar/",
+                  5: prePath+"test_1/edf/dev_test/02_tcp_le/",
+                  6: prePath+"test_2/edf/dev_test/03_tcp_ar_a/"}
 
 
 #Objects
@@ -51,8 +52,8 @@ config_windows = [
 
 
 #data cleanning
-#config_bands         = [1, 4, 8, 12, 18, 24, 30, 60, 90]
-config_bands         = [1, 4, 8, 12, 18, 24]
+config_bands         = [1, 4, 8, 12, 18, 24, 30, 60, 90]
+
 config_timeThreshold = 100
 config_startShift    = 0.05
 config_endShift      = 0.05
@@ -63,4 +64,4 @@ config_bandHighCut   = 100
 #Feature extraction
 config_windowSizeSec    = 1
 config_samplFreq        = 250
-config_overlap          = 0.75
+config_overlap          = 0.5
