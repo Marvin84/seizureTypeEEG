@@ -1,14 +1,16 @@
 #Paths
-config_datasetPart = 2
+config_datasetPart = 4
+
 
 #prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
-prePath = "/Users/laneskij/workspaces/seizureTypeEEG/"
+#prePath = "/Users/laneskij/workspaces/seizureTypeEEG/"
+prePath = "/Volumes/Laneskij/"
 config_rootdir = {1: prePath+"train_0/edf/train/01_tcp_ar/",
-                  2: prePath+"train_1/edf/train/02_tcp_le/",
+                  2: prePath+"train_01/edf/train/02_tcp_le/",
                   3: prePath+"train_2/edf/train/03_tcp_ar_a/",
-                  4: prePath+"test_0/edf/dev_test/01_tcp_ar/",
-                  5: prePath+"test_1/edf/dev_test/02_tcp_le/",
-                  6: prePath+"test_2/edf/dev_test/03_tcp_ar_a/"}
+                  4: prePath+"test_00/edf/dev_test/01_tcp_ar/",
+                  5: prePath+"test_01/edf/dev_test/02_tcp_le/",
+                  6: prePath+"test_02/edf/dev_test/03_tcp_ar_a/"}
 
 
 #Objects

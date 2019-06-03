@@ -12,6 +12,7 @@ from feature_extraction import *
 
 def main(args):
 
+
     print("hi, I am an eeg feature extractor.")
     print("Starting with edf files...")
     edfFiles = get_all_edf_files(args["filenames"], config_electrodes, config_classes)
@@ -29,10 +30,10 @@ def main(args):
                                         config_electrodes,
                                         config_bands)
     featureExtractor.extract_features_from_segments(segments)
-    name = "_".join([config_rootdir[config_datasetPart].split("edf")[0][-7:-2],
-                    "B",str(config_bands[-1]),
-                    "O", str(config_overlap),
-                     "W", str(config_windowSizeSec)])
+    name = "_".join([config_rootdir[config_datasetPart].split("edf")[0][-8:-2],
+                    "B"+str(config_bands[-1]),
+                    "O"+str(config_overlap),
+                     "W"+str(config_windowSizeSec)])
     featureExtractor.write_features_to_csv(name)
 
 
