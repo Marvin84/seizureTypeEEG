@@ -1,16 +1,17 @@
 #Paths
-config_datasetPart = 4
+config_datasetPart = 2
 
 
-#prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
+
+prePath = "/Users/tinaraissi/workspace/EEG/tuh-eeg-auto-diagnosis/"
 #prePath = "/Users/laneskij/workspaces/seizureTypeEEG/"
-prePath = "/Volumes/Laneskij/"
-config_rootdir = {1: prePath+"train_0/edf/train/01_tcp_ar/",
-                  2: prePath+"train_01/edf/train/02_tcp_le/",
-                  3: prePath+"train_2/edf/train/03_tcp_ar_a/",
-                  4: prePath+"test_00/edf/dev_test/01_tcp_ar/",
-                  5: prePath+"test_01/edf/dev_test/02_tcp_le/",
-                  6: prePath+"test_02/edf/dev_test/03_tcp_ar_a/"}
+#prePath = "/Volumes/Laneskij/"
+config_rootdir = {1: prePath+"train0/edf/train/01_tcp_ar/",
+                  2: prePath+"train1/edf/train/02_tcp_le/",
+                  3: prePath+"train2/edf/train/03_tcp_ar_a/",
+                  4: prePath+"test00/edf/dev_test/01_tcp_ar/",
+                  5: prePath+"test01/edf/dev_test/02_tcp_le/",
+                  6: prePath+"test02/edf/dev_test/03_tcp_ar_a/"}
 
 
 #Objects
@@ -24,7 +25,7 @@ config_electrodes = ['A1', 'A2',
                        
 """
 
-config_electrodes = ['A1', 'A2',
+config_electrodes = [
                      'C3', 'C4', 'CZ',
                      'F3', 'F4', 'F7', 'F8', 'FP1','FP2', 'FZ',
                      'O1', 'O2',

@@ -15,8 +15,15 @@ def main(args):
 
     print("hi, I am an eeg feature extractor.")
     print("Starting with edf files...")
+    name = "_".join([config_rootdir[args["index"]].split("edf")[0][-7:-1],
+                    "B"+str(config_bands[-1]),
+                    "O"+str(config_overlap),
+                     "W"+str(config_windowSizeSec)])
+
+
     edfFiles = get_all_edf_files(args["filenames"], config_electrodes, config_classes)
     segments = get_all_segments(edfFiles)
+
 
 
     fftExtractors  = sorted([feat_func for feat_func in dir(feature_frequency) if not feat_func.startswith('_')])
@@ -30,7 +37,7 @@ def main(args):
                                         config_electrodes,
                                         config_bands)
     featureExtractor.extract_features_from_segments(segments)
-    name = "_".join([config_rootdir[config_datasetPart].split("edf")[0][-8:-2],
+    name = "_".join([config_rootdir[args["index"]].split("edf")[0][-7:-1],
                     "B"+str(config_bands[-1]),
                     "O"+str(config_overlap),
                      "W"+str(config_windowSizeSec)])
@@ -52,15 +59,19 @@ if __name__ == '__main__':
     args = {}
     labelDict = dict(zip(config_classes, [[] for _ in range(len((config_classes)))]))
     filenames = {}
+    for i in range(2,7):
+        for subdir, dirs, files in os.walk(config_rootdir[i]):
+            for file in files:
+                p = os.path.join(config_rootdir[i], subdir, file)
+                if p.endswith("edf"):
+                    filenames[p[56:-4]] = p.split(".edf")[0]
+        args["labels"] = labelDict
+        args["filenames"] = filenames
+        args["index"] = i
+        main(args)
 
-    for subdir, dirs, files in os.walk(config_rootdir[config_datasetPart]):
-        for file in files:
-            p = os.path.join(config_rootdir[1], subdir, file)
-            if p.endswith("edf"):
-                filenames[p[56:-4]] = p.split(".edf")[0]
 
 
 
-    args["labels"]      = labelDict
-    args["filenames"]   = filenames
-    main(args)
+
+
