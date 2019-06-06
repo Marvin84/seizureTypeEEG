@@ -25,7 +25,7 @@ def get_all_edf_files(filenames, wantedElectrodes, classes):
             edf = EdfFile(filenames[fName], wantedElectrodes, classes)
             if len(edf.timeSamples):
                 edfFiles.append(edf)
-        if index == 200: break
+        if index == 20: break
     return edfFiles
 
 
@@ -83,7 +83,7 @@ def get_all_segments(edfFiles):
     for edf in edfFiles:
         print("getting the labeled segments from the recording ", str(edf.filename))
         segments.extend(get_segments_from_edf(edf, preprocessor))
-        if edfFiles.index(edf) == 200: break
+        if edfFiles.index(edf) == 20: break
     return segments
 
 

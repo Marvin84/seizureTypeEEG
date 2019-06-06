@@ -26,7 +26,7 @@ def bin_power(X, Band, Fs):
     return Power, Power_Ratio
 
 
-def spectral_entropy(self, X, Band, Fs, Power_Ratio=None):
+def spectral_entropy(X, Band, Fs, Power_Ratio=None):
     """ taken from pyeeg lib and adapted to use self.bin_power since it returned nan
     :param X:
     :param Band:
@@ -35,7 +35,7 @@ def spectral_entropy(self, X, Band, Fs, Power_Ratio=None):
     :return:
     """
     if Power_Ratio is None:
-        Power, Power_Ratio = self.bin_power(X, Band, Fs)
+        Power, Power_Ratio = bin_power(X, Band, Fs)
 
     # added to catch crashes
     if len(Power_Ratio) == 1:
@@ -56,7 +56,7 @@ def compute_pyeeg_feats(segment):
     pwrs, pwrrs, pfds, hfds, mblts, cmplxts, ses, svds, fis, hrsts = [], [], [], [], [], [], [], [], [], []
     dfas, apes = [], []
 
-    for window_id, window in enumerate(segment.timeSamples):
+    for window_id, window in enumerate(segment.windowedTimeSamples):
         for window_electrode_id, window_electrode in enumerate(window):
             # taken from pyeeg code / paper
             electrode_diff = list(np.diff(window_electrode))
@@ -100,31 +100,31 @@ def compute_pyeeg_feats(segment):
             # dfa = pyeeg.dfa(electrode)
             # dfas.append(dfa)
 
-    pwrs = np.asarray(pwrs).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1], len(config_bands) - 1)
+    pwrs = np.asarray(pwrs).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1], len(config_bands) - 1)
     pwrs = np.mean(pwrs, axis=0)
 
-    pwrrs = np.asarray(pwrrs).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1], len(config_bands) - 1)
+    pwrrs = np.asarray(pwrrs).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1], len(config_bands) - 1)
     pwrrs = np.mean(pwrrs, axis=0)
 
-    pfds = np.asarray(pfds).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    pfds = np.asarray(pfds).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     pfds = np.mean(pfds, axis=0)
 
-    hfds = np.asarray(hfds).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    hfds = np.asarray(hfds).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     hfds = np.mean(hfds, axis=0)
 
-    mblts = np.asarray(mblts).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    mblts = np.asarray(mblts).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     mblts = np.mean(mblts, axis=0)
 
-    cmplxts = np.asarray(cmplxts).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    cmplxts = np.asarray(cmplxts).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     cmplxts = np.mean(cmplxts, axis=0)
 
-    ses = np.asarray(ses).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    ses = np.asarray(ses).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     ses = np.mean(ses, axis=0)
 
-    svds = np.asarray(svds).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    svds = np.asarray(svds).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     svds = np.mean(svds, axis=0)
 
-    fis = np.asarray(fis).reshape(segment.timeSamples.shape[0], segment.timeSamples.shape[1])
+    fis = np.asarray(fis).reshape(segment.windowedTimeSamples.shape[0], segment.windowedTimeSamples.shape[1])
     fis = np.mean(fis, axis=0)
 
-    return list(pwrs.ravel()), list(pwrrs.ravel()), pfds, hfds, mblts, cmplxts, ses, svds, fis, apes, hrsts, dfas
+    return list(pwrs.ravel()), list(pwrrs.ravel()), pfds, hfds, mblts, cmplxts, ses, svds, fis, hrsts

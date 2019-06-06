@@ -158,14 +158,15 @@ class FeatureExtractor(object):
         self.timeExtractors     = timeExtractors
         self.electrodes         = electrodes
         self.bands              = bands
-        self.pyeegFeatureNames  = self.get_pyeeg_feature_names()
+        self.pyeegFeatureNames  = ["pwrs", "pwrrs", "pfds", "hfds", "mblts", "cmplxts", "ses", "svds", "fis", "hrsts"]
         self.features           = {"label":[]}
 
 
 
     def get_pyeeg_feature_names(self):
+
         pyeeg_freq_feats = ["pwr", "pwrr"]
-        pyeeg_time_feats = ["pfd", "hfd", "mblt", "cmplxt", "se", "svd", "fi"]  # , "ape", "hrst", "dfa"]
+        pyeeg_time_feats = ["pfd", "hfd", "mblt", "cmplxt", "se", "svd", "fi", "hrst"]  # , "ape", "dfa"]
         return sorted(pyeeg_freq_feats + pyeeg_time_feats)
 
 
@@ -246,22 +247,36 @@ class FeatureExtractor(object):
 
 
     def extract_pyeeg_features(self, segment):
-        pwrs, pwrrs, pfds, hfds, mblts, cmplxts, ses, svds, fis, apes, hrsts, dfas = compute_pyeeg_feats(rec)
 
-        self.features.extend(pwrs)
-        self.features.extend(pwrrs)
-        self.features.extend(pfds)
-        self.features.extend(hfds)
-        self.features.extend(mblts)
-        self.features.extend(cmplxts)
-        self.features.extend(ses)
-        self.features.extend(svds)
-        self.features.extend(fis)
+
+        #[pwrs, pwrrs, pfds, hfds, mblts, cmplxts, ses, svds, fis, hrsts]
+        features = compute_pyeeg_feats(segment)
+
+        for feat_id, pyeeg_feat in enumerate(self.pyeegFeatureNames):
+            if pyeeg_feat == "pwr" or pyeeg_feat == "pwrr":
+                for band_id, band in enumerate(self.bands[:-1]):
+                    for ele_id, electrode in enumerate(self.electrodes):
+                        index = band_id * len(self.bands) + ele_id
+                        label = '_'.join(['pyeeg', pyeeg_feat, str(band) + '-' + str(self.bands[band_id + 1])
+                                          + 'Hz', str(electrode)])
+                        if label not in self.features:
+                            self.features[label] = []
+                        if pyeeg_feat == "pwr":
+                            self.features[label].append(features[0][index])
+                        else: self.features[label].append(features[1][index])
+            else:
+                for ele_id, electrode in enumerate(self.electrodes):
+                    label = '_'.join(['pyeeg', pyeeg_feat, str(electrode)])
+                    if label not in self.features:
+                        self.features[label] = []
+                    self.features[label].append(features[feat_id][ele_id])
+
 
 
     def extract_features_from_segment(self, segment):
         self.extract_features_in_freq(segment)
         self.extract_features_in_time(segment)
+        self.extract_pyeeg_features(segment)
         self.features["label"].append(segment.label)
 
 
@@ -273,18 +288,14 @@ class FeatureExtractor(object):
 
 
     def write_features_to_csv(self, filename):
-        n = len(self.features[self.featureLabels[0]])
+        extractedFeatures = list(self.features.values())
         features = []
-        labels = []
-        labels.extend(self.get_freq_feature_labels())
-        labels.extend(self.get_time_feature_labels())
-        labels.append("label")
-        features.append(labels)
-        for i in range(n):
+        features.append(list(self.features.keys()))
+        for i in range(len(extractedFeatures)):
             f = []
-            for feat in labels:
-                f.extend(self.features[feat][i])
-            features.append(f)
+            for j in range(len(list(self.features.keys()))):
+                f.append(self)
+
 
 
         with open('.'.join([filename, "csv"]), 'w') as csvfile:
