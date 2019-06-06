@@ -7,6 +7,7 @@ import csv
 
 from functions import feature_frequency
 from functions import feature_time
+from feature_extraction import *
 from config import *
 
 
@@ -104,9 +105,6 @@ class Segment(object):
             preprocessor.clean(self)
 
 
-
-
-
 class DataWindower(object):
     def __init__(self, windowType, windowSizeSec, overlap ):
 
@@ -151,24 +149,45 @@ class FeatureExtractor(object):
 
     def __init__(self, windowSizeSec, windowSize, overlap, fftExtractors, timeExtractors, electrodes, bands):
 
-        self.windowSizeSec = windowSizeSec
-        self.windowSize = windowSize
-        self.windowOverlap = overlap #already divided by 100
-        self.bandOverlap = 0.5 # add the suggested band overlap of 50%
-        self.overlapSize = int(overlap * windowSize)
-        self.featureLabels = []
-        self.fftExtractors = fftExtractors
-        self.timeExtractors = timeExtractors
-        self.electrodes = electrodes
-        self.bands = bands
-        self.featureLabels = ['_'.join(['fft', l]) for l in fftExtractors] \
-                             + ['_'.join(['time', l]) for l in timeExtractors] + ["label"]
-
-        self.features = dict(zip(self.featureLabels, [[] for _ in range(len(self.featureLabels))]))
+        self.windowSizeSec      = windowSizeSec
+        self.windowSize         = windowSize
+        self.windowOverlap      = overlap                       #already divided by 100
+        self.bandOverlap        = 0.5                           # add the suggested band overlap of 50%
+        self.overlapSize        = int(overlap * windowSize)
+        self.fftExtractors      = fftExtractors
+        self.timeExtractors     = timeExtractors
+        self.electrodes         = electrodes
+        self.bands              = bands
+        self.pyeegFeatureNames  = self.get_pyeeg_feature_names()
+        self.features           = {"label":[]}
 
 
 
+    def get_pyeeg_feature_names(self):
+        pyeeg_freq_feats = ["pwr", "pwrr"]
+        pyeeg_time_feats = ["pfd", "hfd", "mblt", "cmplxt", "se", "svd", "fi"]  # , "ape", "hrst", "dfa"]
+        return sorted(pyeeg_freq_feats + pyeeg_time_feats)
 
+
+    def set_freq_feature_with_label(self, funcName, bandLowId, bandHighId, featureVector):
+        #receiving for a specific band a list of mean values of length of number of electrodes
+        for index, electrode in enumerate(self.electrodes):
+            label = '_'.join(['fft',
+                              funcName,
+                              str(bandLowId) + '-' + str(bandHighId) + 'Hz',
+                              electrode])
+            if label not in self.features:
+                self.features[label] = []
+            self.features[label].append(featureVector[index])
+
+
+    def set_time_feature_labels(self, funcName, featureVector):
+        # receiving list of mean values of length of number of electrodes
+        for index, electrode in enumerate(self.electrodes):
+            label = '_'.join(['time', funcName, str(electrode)])
+            if label not in self.features:
+                self.features[label] = []
+            self.features[label].append(featureVector[index])
 
 
     def compute_mean_freq_features(self, freqFeatureName, segment):
@@ -177,7 +196,6 @@ class FeatureExtractor(object):
         band_limits. The values are mean over all time windows and channels
         :param freq_feat_name: the function name that should be called
         :param rec: the recording object holding the data and info
-        :return: mean amplitudes in frequency bands over the different channels
         """
         func = getattr(feature_frequency, freqFeatureName)
         # amplitudes shape: windows x electrodes x frequencies
@@ -185,7 +203,7 @@ class FeatureExtractor(object):
         windowSize = self.windowSizeSec * segment.samplingFreq
         freqBinSize = segment.samplingFreq / windowSize
 
-        meanAmplitudes = []
+
         for i in range(len(self.bands) - 1):
             lower, upper = self.bands[i], self.bands[i+1]
 
@@ -199,29 +217,11 @@ class FeatureExtractor(object):
 
             meanAmplitudeBands = func(bandAmplitudes, axis=2)
             meanAmplitudeWindows = np.mean(meanAmplitudeBands, axis=0)
-            meanAmplitudes.extend(list(meanAmplitudeWindows))
 
-        return meanAmplitudes
-
+            self.set_freq_feature_with_label(freqFeatureName, self.bands[i], self.bands[i+1], meanAmplitudeWindows)
 
 
-    def get_freq_feature_labels(self):
-        l = []
-        for fExt in self.fftExtractors:
-            for band_id, band in enumerate(self.bands[:-1]):
-                for electrode in self.electrodes:
-                    label = '_'.join(['fft', fExt, str(band) + '-' + str(self.bands[band_id + 1]) + 'Hz',
-                                      str(electrode)])
-                    l.append(label)
-        return l
 
-    def get_time_feature_labels(self):
-        l = []
-        for tExt in self.timeExtractors:
-            for electrode in self.electrodes:
-                label = '_'.join(['time', tExt, str(electrode)])
-                l.append(label)
-        return l
 
     def rolling_to_windows(self, features):
         """ This should be used to transform the results of the rolling operation of pandas to window values.
@@ -229,33 +229,40 @@ class FeatureExtractor(object):
         :param features: feature computation achieved through pandas.rolling()
         :return: rolling feature sliced at the window locations
         """
-        f = features[self.windowSize - 1::self.windowSize - self.overlapSize]
         return features[self.windowSize - 1::self.windowSize - self.overlapSize]
 
     def extract_features_in_freq(self, segment):
-
-
         for freqFeatureName in self.fftExtractors:
-            label =  '_'.join(['fft', freqFeatureName])
-            self.features[label].append(self.compute_mean_freq_features(freqFeatureName, segment))
-
+            self.compute_mean_freq_features(freqFeatureName, segment)
 
     def extract_features_in_time(self, segment):
-
         for timeFeatureName in self.timeExtractors:
             func = getattr(feature_time, timeFeatureName)
             allFeatures = func(pd.DataFrame(segment.timeSamples.T), self.windowSize)
             featSlidingWindows = self.rolling_to_windows(allFeatures)
-            f = featSlidingWindows.values
             meanValues = np.mean(featSlidingWindows, axis=0)
-            label = '_'.join(['time', timeFeatureName])
-            self.features[label].append(meanValues.values)
+            self.set_time_feature_labels(timeFeatureName, meanValues.values)
+
+
+
+    def extract_pyeeg_features(self, segment):
+        pwrs, pwrrs, pfds, hfds, mblts, cmplxts, ses, svds, fis, apes, hrsts, dfas = compute_pyeeg_feats(rec)
+
+        self.features.extend(pwrs)
+        self.features.extend(pwrrs)
+        self.features.extend(pfds)
+        self.features.extend(hfds)
+        self.features.extend(mblts)
+        self.features.extend(cmplxts)
+        self.features.extend(ses)
+        self.features.extend(svds)
+        self.features.extend(fis)
 
 
     def extract_features_from_segment(self, segment):
         self.extract_features_in_freq(segment)
         self.extract_features_in_time(segment)
-        self.features["label"].append([segment.label])
+        self.features["label"].append(segment.label)
 
 
     def extract_features_from_segments(self, listOfSegments):
@@ -268,14 +275,14 @@ class FeatureExtractor(object):
     def write_features_to_csv(self, filename):
         n = len(self.features[self.featureLabels[0]])
         features = []
-        l = []
-        l.extend(self.get_freq_feature_labels())
-        l.extend(self.get_time_feature_labels())
-        l.append("label")
-        features.append(l)
+        labels = []
+        labels.extend(self.get_freq_feature_labels())
+        labels.extend(self.get_time_feature_labels())
+        labels.append("label")
+        features.append(labels)
         for i in range(n):
             f = []
-            for feat in self.featureLabels:
+            for feat in labels:
                 f.extend(self.features[feat][i])
             features.append(f)
 

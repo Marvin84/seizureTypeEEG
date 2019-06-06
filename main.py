@@ -59,7 +59,7 @@ if __name__ == '__main__':
     args = {}
     labelDict = dict(zip(config_classes, [[] for _ in range(len((config_classes)))]))
     filenames = {}
-    for i in range(2,7):
+    for i in range(1,2):
         for subdir, dirs, files in os.walk(config_rootdir[i]):
             for file in files:
                 p = os.path.join(config_rootdir[i], subdir, file)
