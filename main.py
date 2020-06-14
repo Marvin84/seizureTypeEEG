@@ -10,13 +10,9 @@ from feature_extraction import *
 
 
 
-def main(args):
+def executePipeline(args):
     print("hi, I am an eeg feature extractor.")
     print("Starting with edf files...")
-    name = "_".join([config_rootdir[args["index"]].split("edf")[0][-7:-1],
-                    "B"+str(config_bands[-1]),
-                    "O"+str(config_overlap),
-                     "W"+str(config_windowSizeSec)])
 
 
     edfFiles = get_all_edf_files(args["filenames"], config_electrodes, config_classes)
@@ -33,7 +29,7 @@ def main(args):
                                         config_electrodes,
                                         config_bands)
     featureExtractor.extract_features_from_segments(segments)
-    name = "_".join([config_rootdir[args["index"]].split("edf")[0][-7:-1],
+    name = "allCh" + "_".join([config_rootdir[args["index"]].split("edf")[0][-7:-1],
                     "B"+str(config_bands[-1]),
                     "O"+str(config_overlap),
                      "W"+str(config_windowSizeSec)])
@@ -43,10 +39,11 @@ def main(args):
 
 if __name__ == '__main__':
 
-    args = {}
+
     labelDict = dict(zip(config_classes, [[] for _ in range(len((config_classes)))]))
-    filenames = {}
-    for i in list(range(3,9)):
+    for i in list(range(1,16)):
+        filenames = {}
+        args = {}
         for subdir, dirs, files in os.walk(config_rootdir[i]):
             for file in files:
                 p = os.path.join(config_rootdir[i], subdir, file)
@@ -55,7 +52,7 @@ if __name__ == '__main__':
         args["labels"] = labelDict
         args["filenames"] = filenames
         args["index"] = i
-        main(args)
+        executePipeline(args)
 
 
 
