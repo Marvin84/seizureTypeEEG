@@ -92,6 +92,7 @@ def get_all_segments(edfFiles):
 def check_if_seizure(filename):
     with open(filename + ".tse") as file:
         for line in file:
+            print(line)
             if len(line.split()) == 4:
                 labelInfo = line.split()[:-1]
                 if labelInfo[2] != "bckg":

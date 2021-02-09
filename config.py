@@ -69,10 +69,9 @@ config_windows = [
 
 
 #data cleanning
-config_bands         = [1, 4, 8, 12, 18, 24, 30, 60, 90]
-#config_bands         = [1, 4, 8, 12, 18, 24]
+#config_bands         = [1, 4, 8, 12, 18, 24, 30]
+config_bands         = [0, 4, 8, 13, 18, 24, 30, 50]
 
-config_timeThreshold = 100
 config_startShift    = 0.05
 config_endShift      = 0.05
 config_powerLineFreq = 60
